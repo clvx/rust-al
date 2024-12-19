@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub fn greet_user(name: &str) -> String{
   format!("Hello, {}!", name)
 }
@@ -14,6 +16,7 @@ pub enum LoginRole {
     User,
 }
 
+#[derive(Debug, Clone)]
 pub struct User {
     pub username: String,
     pub password: String,
@@ -30,26 +33,50 @@ impl User {
     }
 }
 
+/*
 fn get_admin_users() {
     let _admin: Vec<String> = get_users().into_iter()
         .filter(|user| user.role == LoginRole::Admin)
         .map(|user| user.username)
         .collect();
 }
+*/
 
+/*
+ * get_users using vectors
 pub fn get_users() -> Vec<User> {
     vec![
         User::new("admin", "password", LoginRole::Admin),
         User::new("mike", "password", LoginRole::User),
     ]
 }
+*/
+
+
+pub fn get_users() -> HashMap<String, User> {
+    let mut users: HashMap<String, User> = HashMap::new();
+    users.insert("admin".to_string(), User::new("admin", "password", LoginRole::Admin));
+    users.insert("mike".to_string(), User::new("mike", "password", LoginRole::User));
+    users
+}
 
 pub fn login(username: &str, password: &str) -> Option<LoginAction> {
 
     let username: String = username.to_lowercase();
 
-    let users: Vec<User> = get_users(); 
+    let users: HashMap<String, User> = get_users();
+    if let Some(user) = users.get(&username) {
+        if user.password == password {
+            return Some(LoginAction::Granted(user.role.clone()));
+        } else {
+            return Some(LoginAction::Denied);
+        }
+    }
+
+
     /*
+    /*
+    let users: Vec<User> = get_users(); 
     Searching for the User
     users.iter():
         Creates an iterator over the users array, where each item is a reference to a User (&User).
@@ -67,6 +94,7 @@ pub fn login(username: &str, password: &str) -> Option<LoginAction> {
             return Some(LoginAction::Denied);
         }
     }
+    */
     None
 }
 
