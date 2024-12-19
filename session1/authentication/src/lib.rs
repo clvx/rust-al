@@ -30,8 +30,15 @@ impl User {
     }
 }
 
-pub fn get_users() -> [User; 2] {
-    [
+fn get_admin_users() {
+    let _admin: Vec<String> = get_users().into_iter()
+        .filter(|user| user.role == LoginRole::Admin)
+        .map(|user| user.username)
+        .collect();
+}
+
+pub fn get_users() -> Vec<User> {
+    vec![
         User::new("admin", "password", LoginRole::Admin),
         User::new("mike", "password", LoginRole::User),
     ]
@@ -39,9 +46,9 @@ pub fn get_users() -> [User; 2] {
 
 pub fn login(username: &str, password: &str) -> Option<LoginAction> {
 
-    let users: [User; 2] = get_users(); 
     let username: String = username.to_lowercase();
 
+    let users: Vec<User> = get_users(); 
     /*
     Searching for the User
     users.iter():
