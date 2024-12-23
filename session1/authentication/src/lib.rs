@@ -68,6 +68,12 @@ pub fn get_default_users() -> HashMap<String, User> {
     users
 }
 
+pub fn save_users(users: HashMap<String, User>){
+    let users_path: &Path = Path::new("users.json");
+    let users_json = serde_json::to_string(&users).unwrap();
+    std::fs::write(users_path, users_json).unwrap();
+}
+
 pub fn get_users() -> HashMap<String, User> {
     let users_path: &Path = Path::new("users.json");
     if users_path.exists() {
