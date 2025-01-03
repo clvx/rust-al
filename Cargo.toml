@@ -11,5 +11,8 @@ edition = "2021"
 members = [
     "session1/hello_world", 
     "session1/variables",
-    "session1/authentication", "session1/login", "session1/login_manager",
+    "session1/authentication", 
+    "session1/login", 
+    "session1/login_manager", 
+    "session2/hello",
 ]
