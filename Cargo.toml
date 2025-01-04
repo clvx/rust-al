@@ -17,5 +17,6 @@ members = [
     "session2/hello",
     "session2/divide_work",
     "session2/thread_builder",
-    "session2/scoped_threads", "session2/footgun",
+    "session2/scoped_threads",
+    "session2/footgun",
 ]
