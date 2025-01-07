@@ -226,6 +226,12 @@ name = "mutexes"
 version = "0.1.0"
 
 [[package]]
+name = "once_cell"
+version = "1.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -246,6 +252,13 @@ dependencies = [
 [[package]]
 name = "rust-ardanlabs"
 version = "0.1.0"
+
+[[package]]
+name = "rwlocks"
+version = "0.1.0"
+dependencies = [
+ "once_cell",
+]
 
 [[package]]
 name = "ryu"

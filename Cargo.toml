@@ -20,4 +20,5 @@ members = [
     "session2/scoped_threads",
     "session2/footgun",
     "session2/mutexes",
+    "session2/rwlocks",
 ]
