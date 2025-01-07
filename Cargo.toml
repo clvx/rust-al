@@ -22,4 +22,5 @@ members = [
     "session2/mutexes",
     "session2/rwlocks",
     "session2/deadlocks",
+    "session2/dashing",
 ]
