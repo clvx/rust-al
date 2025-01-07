@@ -23,4 +23,5 @@ members = [
     "session2/rwlocks",
     "session2/deadlocks",
     "session2/dashing",
+    "session2/parking",
 ]
