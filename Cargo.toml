@@ -28,4 +28,5 @@ members = [
     "session2/workers",
     #threadpool -> workers2
     "session2/threadpool",
+    "session2/affinity",
 ]
