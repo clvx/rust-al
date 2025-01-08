@@ -26,4 +26,6 @@ members = [
     "session2/parking",
     "session2/channels",
     "session2/workers",
+    #threadpool -> workers2
+    "session2/threadpool",
 ]

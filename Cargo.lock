@@ -437,6 +437,13 @@ name = "thread_builder"
 version = "0.1.0"
 
 [[package]]
+name = "threadpool"
+version = "0.1.0"
+dependencies = [
+ "once_cell",
+]
+
+[[package]]
 name = "typenum"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
