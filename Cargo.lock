@@ -289,6 +289,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "log"
+version = "0.4.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
+
+[[package]]
 name = "login"
 version = "0.1.0"
 dependencies = [
@@ -376,6 +382,12 @@ dependencies = [
 [[package]]
 name = "rust-ardanlabs"
 version = "0.1.0"
+
+[[package]]
+name = "rustversion"
+version = "1.0.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7c45b9784283f1b2e7fb61b42047c2fd678ef0960d4f6f1eba131594cc369d4"
 
 [[package]]
 name = "rwlocks"
@@ -467,6 +479,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "thread-priority"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfe075d7053dae61ac5413a34ea7d4913b6e6207844fd726bdd858b37ff72bf5"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "libc",
+ "log",
+ "rustversion",
+ "winapi",
+]
+
+[[package]]
 name = "thread_builder"
 version = "0.1.0"
 
@@ -475,6 +501,13 @@ name = "threadpool"
 version = "0.1.0"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "tprio"
+version = "0.1.0"
+dependencies = [
+ "thread-priority",
 ]
 
 [[package]]
