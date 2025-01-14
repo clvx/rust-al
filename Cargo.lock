@@ -770,6 +770,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio_testing"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "tprio"
 version = "0.1.0"
 dependencies = [
