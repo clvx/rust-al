@@ -30,4 +30,5 @@ members = [
     "session2/threadpool",
     "session2/affinity",
     "session2/tprio",
+    "session3/hello_async",
 ]
