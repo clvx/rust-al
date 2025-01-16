@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+// hash_password hashes a password using the sha2 crate
 pub fn hash_password(password: &str) -> String {
     use sha2::Digest;
     let mut hasher = sha2::Sha256::new();
@@ -61,6 +62,8 @@ pub fn get_users() -> Vec<User> {
 }
 */
 
+// get_default_users returns a HashMap of default users with the username as the key
+// and the User struct as the value
 pub fn get_default_users() -> HashMap<String, User> {
     let mut users: HashMap<String, User> = HashMap::new();
     users.insert("admin".to_string(), User::new("admin", "password", LoginRole::Admin));
@@ -68,12 +71,15 @@ pub fn get_default_users() -> HashMap<String, User> {
     users
 }
 
+//save_users saves the users to the users.json file using serde_json
 pub fn save_users(users: HashMap<String, User>){
     let users_path: &Path = Path::new("users.json");
     let users_json = serde_json::to_string(&users).unwrap();
     std::fs::write(users_path, users_json).unwrap();
 }
 
+//get_users reads the users.json file and returns a Vec<User> if the file exists
+//otherwise it creates the file and returns a Vec<User>
 pub fn get_users() -> HashMap<String, User> {
     let users_path: &Path = Path::new("users.json");
     if users_path.exists() {
@@ -90,6 +96,10 @@ pub fn get_users() -> HashMap<String, User> {
     }
 }
 
+// login checks if the username and password are correct and returns a LoginAction
+// if the username and password are correct, it returns LoginAction::Granted(role)
+// if the username and password are incorrect, it returns LoginAction::Denied
+// if the username is not found, it returns None
 pub fn login(username: &str, password: &str) -> Option<LoginAction> {
 
     let username: String = username.to_lowercase();
