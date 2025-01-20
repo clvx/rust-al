@@ -39,4 +39,5 @@ members = [
     "session3/restclient",
     "session3/tcpserver",
     "session3/async_channels",
+    "session3/async_mutex",
 ]
