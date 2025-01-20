@@ -38,4 +38,5 @@ members = [
     "session3/fileio",
     "session3/restclient",
     "session3/tcpserver",
+    "session3/async_channels",
 ]
