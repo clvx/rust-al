@@ -40,4 +40,6 @@ members = [
     "session3/tcpserver",
     "session3/async_channels",
     "session3/async_mutex",
+    "session3/tokio_select",
+    "session3/tokio_select_broadcast",
 ]
