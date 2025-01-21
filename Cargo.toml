@@ -3,10 +3,6 @@ name = "rust-ardanlabs"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-
 [workspace]
 members = [
     "session1/hello_world", 
@@ -45,4 +41,5 @@ members = [
     "session3/pinning",
     "session4/logspan",
     "session4/db",
+    "session4/web_service",
 ]
