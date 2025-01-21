@@ -43,4 +43,5 @@ members = [
     "session3/tokio_select",
     "session3/tokio_select_broadcast",
     "session3/pinning",
+    "session4/logspan",
 ]
