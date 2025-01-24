@@ -43,4 +43,6 @@ members = [
     #"session4/db",
     #"session4/web_service",
     "session4/thumbs",
+    "session4/dropping",
+    "session4/smart_pointer",
 ]
