@@ -162,6 +162,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
+name = "atomicrefcount"
+version = "0.1.0"
+
+[[package]]
 name = "authentication"
 version = "0.1.0"
 dependencies = [
@@ -616,6 +620,10 @@ dependencies = [
  "smallvec",
  "zune-inflate",
 ]
+
+[[package]]
+name = "external_arc_mutex"
+version = "0.1.0"
 
 [[package]]
 name = "fastrand"
@@ -1292,6 +1300,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "internal_arc_mutex"
+version = "0.1.0"
+
+[[package]]
 name = "ipnet"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1785,6 +1797,14 @@ checksum = "03a862b389f93e68874fbf580b9de08dd02facb9a788ebadaf4a3fd33cf58834"
 dependencies = [
  "bitflags 2.8.0",
 ]
+
+[[package]]
+name = "refcell"
+version = "0.1.0"
+
+[[package]]
+name = "refcount"
+version = "0.1.0"
 
 [[package]]
 name = "reqwest"

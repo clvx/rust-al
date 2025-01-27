@@ -45,4 +45,9 @@ members = [
     "session4/thumbs",
     "session4/dropping",
     "session4/smart_pointer",
+    "session4/refcount",
+    "session4/atomicrefcount",
+    "session4/external_arc_mutex",
+    "session4/internal_arc_mutex",
+    "session4/refcell",
 ]
