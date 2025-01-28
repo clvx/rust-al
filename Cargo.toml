@@ -53,5 +53,5 @@ members = [
     "session4/lifetimes",
     "session4/traits",
     "session4/operator_overloading",
-    "session4/generics",
+    "session4/generics_and_iterators",
 ]
