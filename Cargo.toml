@@ -54,4 +54,5 @@ members = [
     "session4/traits",
     "session4/operator_overloading",
     "session4/generics_and_iterators",
+    "session4/linked_list",
 ]
