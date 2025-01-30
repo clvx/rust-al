@@ -1,7 +1,7 @@
 use shared_data::CollectorCommandV1;
 use std::{time::Instant, sync::mpsc::Sender};
 
-pub fn collect_data(tx: Sender<CollectorCommandV1>) {
+pub fn collect_data(tx: Sender<CollectorCommandV1>, collector_id: u128) {
     // Initialize the sysinfo system
     let mut sys = sysinfo::System::new_all();
 
@@ -29,7 +29,7 @@ pub fn collect_data(tx: Sender<CollectorCommandV1>) {
 
         // Submit
         let send_result = tx.send(CollectorCommandV1::SubmitData {
-            collector_id: 0,
+            collector_id,
             total_memory,
             used_memory,
             average_cpu_usage,
