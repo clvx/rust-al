@@ -57,4 +57,5 @@ members = [
     "session4/linked_list",
     "session4/save_bytes",
     "session4/save_dynamic_bytes", #protocol
+    "session5/shared_data",
 ]
