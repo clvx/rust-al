@@ -58,4 +58,6 @@ members = [
     "session4/save_bytes",
     "session4/save_dynamic_bytes", #protocol
     "session5/shared_data",
+    "session5/collector",
+    "session5/collector_server",
 ]
