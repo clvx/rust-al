@@ -1,5 +1,4 @@
 use shared_data::CollectorCommandV1;
-use sysinfo::{System, Cpu};
 use std::{time::Instant, sync::mpsc::Sender};
 
 pub fn collect_data(tx: Sender<CollectorCommandV1>) {
