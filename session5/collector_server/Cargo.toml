@@ -10,3 +10,6 @@ shared_data = { path = "../shared_data" }
 sqlx = { version = "0.8.3", features = ["runtime-tokio-native-tls", "sqlite"] }
 uuid = "1.12.1"
 dotenv = "0.15.0"
+axum = "0.8.1"
+futures = "0.3.31"
+serde = { version = "1.0.217", features = ["derive"] }
