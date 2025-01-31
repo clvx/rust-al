@@ -1,4 +1,5 @@
 mod collector;
+use axum::response::Redirect;
 use tokio::net::TcpListener;
 use axum::Extension;
 use axum::{Router, routing::get};
@@ -20,8 +21,10 @@ async fn main() -> anyhow::Result<()> {
 
     // Start the web server
     let app = Router::new()
-        .route("/", get(test))
+        .route("/", get(|| async {Redirect::to("/api/all")}))
         .route("/api/all", get(api::show_all))
+        .route("/api/collectors", get(api::show_collectors))
+        .route("/api/collector/{uuid}", get(api::collector_data))
         .layer(Extension(pool)); // This is the database connection pool
     let addr = TcpListener::bind("localhost:3000").await?;
     axum::serve(addr, app).await?;
@@ -30,8 +33,3 @@ async fn main() -> anyhow::Result<()> {
     handle.await??; // Two question marks - we're unwrapping the task result, and the result from running the collector.
     Ok(())
 }
-
-async fn test() -> &'static str {
-    "Hello, world!"
-}
-
