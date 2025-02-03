@@ -6,4 +6,6 @@ pub enum CollectorError {
     UnableToConnect,
     #[error("Failed to send data")]
     UnableToSend,
+    #[error("Failed to receive data")]
+    UnableToReceive,
 }

@@ -39,6 +39,11 @@ pub enum CollectorCommandV1 {
     },
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub enum CollectorResponseV1 {
+    Ack(u128),
+}
+
 //unix_now gets the current time in seconds since the Unix epoch.
 fn unix_now() -> u32 {
     let start = SystemTime::now();
@@ -97,6 +102,14 @@ pub fn decode_v1(bytes: &[u8]) -> (u32, CollectorCommandV1) {
     (timestamp, bincode::deserialize(payload).unwrap())
 }
 
+pub fn encode_response_v1(command: CollectorResponseV1) -> Vec<u8> {
+    bincode::serialize(&command).unwrap()
+}
+
+pub fn decode_response_v1(bytes: &[u8]) -> CollectorResponseV1 {
+    bincode::deserialize(bytes).unwrap()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -113,5 +126,13 @@ mod tests {
         let (timestamp, decoded) = decode_v1(&encoded);
         assert_eq!(decoded, command);
         assert!(timestamp > 0);
+    }
+
+    #[test]
+    fn test_encode_decode_response() {
+        let response = CollectorResponseV1::Ack(123);
+        let encoded = encode_response_v1(response.clone());
+        let decoded = decode_response_v1(&encoded);
+        assert_eq!(decoded, response);
     }
 }

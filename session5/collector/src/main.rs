@@ -33,7 +33,10 @@ fn main() {
         let encoded = shared_data::encode_v1(&command);
         send_queue.push_back(encoded); // Add the command to the queue
         
-        let _ = sender::send_queue(&mut send_queue);
+        let result = sender::send_queue(&mut send_queue);
+        if result.is_err() {
+            println!("{result:?}");
+        }
         /*
         // send all queued commands in different connections
         while let Some(command) = send_queue.pop_front() {

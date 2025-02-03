@@ -1,7 +1,7 @@
 use sqlx::{Pool, Sqlite};
 use tokio::net::{TcpListener, TcpStream};
-use shared_data::{decode_v1, CollectorCommandV1, DATA_COLLECTOR_ADDRESS};
-use tokio::io::AsyncReadExt;
+use shared_data::{decode_v1, encode_response_v1, CollectorCommandV1, CollectorResponseV1, DATA_COLLECTOR_ADDRESS};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use std::net::SocketAddr;
 
 
@@ -40,6 +40,7 @@ async fn new_connection(mut socket: TcpStream, address: SocketAddr, cnn: Pool<Sq
                 let collector_id = uuid::Uuid::from_u128(collector_id);
                 let collector_id = collector_id.to_string();
 
+                // Insert the data into the database
                 let result = sqlx::query("INSERT INTO timeseries (collector_id, received, total_memory, used_memory, average_cpu) VALUES (?, ?, ?, ?, ?)")
                     .bind(&collector_id)
                     .bind(timestampt)
@@ -51,6 +52,10 @@ async fn new_connection(mut socket: TcpStream, address: SocketAddr, cnn: Pool<Sq
 
                 if result.is_err() {
                     eprintln!("Failed to insert data: {result:?}");
+                } else { // Send an ACK
+                    let ack = CollectorResponseV1::Ack(0);
+                    let bytes = encode_response_v1(ack);
+                    socket.write_all(&bytes).await.unwrap();
                 }
             }
         }
