@@ -61,3 +61,10 @@ members = [
     "session5/collector",
     "session5/collector_server",
 ]
+
+[profile.release]
+opt-level = "z" # z means optimize for size
+strip = true    # strip means remove debug symbols
+lto = true      # lto means link time optimization
+codegen-units = 1  # no parallel codegen
+#panic = "abort" # abort means no unwind
