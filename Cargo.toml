@@ -60,6 +60,7 @@ members = [
     "session5/shared_data",
     "session5/collector",
     "session5/collector_server",
+    "bonus/file_adapter",
 ]
 
 [profile.release]
