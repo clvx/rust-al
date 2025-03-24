@@ -3,7 +3,7 @@
 // routing is a module that contains the routing primitives like get, post, put, etc.
 // Router is a struct that is used to define the routes of the application.
 use axum::{
-    extract::{Path, Query}, http::HeaderMap, response::Html, routing::get, Extension, Router
+    extract::{Path, Query, State}, http::HeaderMap, response::Html, routing::get, Extension, Router
 };
 use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
@@ -16,14 +16,31 @@ struct MyConfig {
     text: String,
 }
 
+struct SubRouterState(i32); 
+
 fn service_one() -> Router {
-    Router::new().route("/", get(||async {Html("Service One".to_string())}))
+    let state = Arc::new(SubRouterState(42));
+    Router::new().route("/", get(sv1_handler)
+        .with_state(state)
+        )
+}
+
+async fn sv1_handler(
+    Extension(counter): Extension<Arc<MyCounter>>,
+    State(state): State<Arc<SubRouterState>>,
+    ) -> Html<String> {
+    counter.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    Html(format!("<h1>Service One <br>
+            Visitor number: {}<br>
+            SubRouterState: {}</h1>", 
+            counter.counter.load(std::sync::atomic::Ordering::Relaxed),
+            state.0)
+        )
 }
 
 fn service_two() -> Router {
     Router::new().route("/", get(||async {Html("Service Two".to_string())}))
 }
-
 
 #[tokio::main]
 async fn main() {
@@ -38,7 +55,7 @@ async fn main() {
 
     let app = Router::new()
         .nest("/1", service_one()) //add router for service one
-        .nest("/2", service_one()) //add router for service two
+        .nest("/2", service_two()) //add router for service two
         .route("/", get(handler))
         .route("/book/:id", get(path_extract))
         .route("/book", get(query_extract))
