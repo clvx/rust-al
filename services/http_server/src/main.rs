@@ -3,65 +3,37 @@
 // routing is a module that contains the routing primitives like get, post, put, etc.
 // Router is a struct that is used to define the routes of the application.
 use axum::{
-    extract::{Path, Query, State}, http::HeaderMap, response::Html, routing::get, Extension, Router
+    extract::{Path, Query, State}, http::HeaderMap, response::Html, routing::get, Extension, Json, Router
 };
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
-struct MyCounter {
+struct Counter {
     counter: AtomicUsize, //interior mutability pattern to share the counter 
-                          //between multiple threads
 }
 
-struct MyConfig {
-    text: String,
-}
-
-struct SubRouterState(i32); 
-
-fn service_one() -> Router {
-    let state = Arc::new(SubRouterState(42));
-    Router::new().route("/", get(sv1_handler)
-        .with_state(state)
-        )
-}
-
-async fn sv1_handler(
-    Extension(counter): Extension<Arc<MyCounter>>,
-    State(state): State<Arc<SubRouterState>>,
-    ) -> Html<String> {
-    counter.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    Html(format!("<h1>Service One <br>
-            Visitor number: {}<br>
-            SubRouterState: {}</h1>", 
-            counter.counter.load(std::sync::atomic::Ordering::Relaxed),
-            state.0)
-        )
-}
-
-fn service_two() -> Router {
-    Router::new().route("/", get(||async {Html("Service Two".to_string())}))
+struct Config {
+    env: String,
 }
 
 #[tokio::main]
 async fn main() {
 
-    let shared_counter = Arc::new(MyCounter {
+    let shared_counter = Arc::new(Counter {
         counter: AtomicUsize::new(0),
     });
 
-    let shared_text = Arc::new(MyConfig {
-        text: "This is configuration".to_string(),
+    let shared_config = Arc::new(Config {
+        env: "This is configuration".to_string(),
     });
 
     let app = Router::new()
-        .nest("/1", service_one()) //add router for service one
-        .nest("/2", service_two()) //add router for service two
         .route("/", get(handler))
-        .route("/book/:id", get(path_extract))
-        .route("/book", get(query_extract))
-        .route("/headers", get(header_extract))
-        .layer(Extension(shared_text))
-        .layer(Extension(shared_counter));
+        .route("/inc", get(increment))
+        .nest("/extract", extractors())             // nesting extractors
+        .nest("/nest", nesting())                   // nesting services under /svc/1 /svc/2
+        .layer(Extension(shared_config))            // shared configuration
+        .layer(Extension(shared_counter));          // shared counter
 
     // It's called bind because it uses the bind() system call to bind to a socket.
     let listener = tokio::net::TcpListener::bind("localhost:3000")
@@ -72,15 +44,56 @@ async fn main() {
     axum::serve(listener, app).await.unwrap(); //axum is async
 }
 
-async fn handler(
-    Extension(counter): Extension<Arc<MyCounter>>,
-    Extension(config): Extension<Arc<MyConfig>>,
-    ) -> Html<String> {
-    counter.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    Html(format!("<h1>{} - Visitor number: {}</h1>", 
-            config.text,
-            counter.counter.load(std::sync::atomic::Ordering::Relaxed))
-        )
+//-------------------------------------------------------------------------
+// Index handler ----------------------------------------------------------
+// Handler functions are async functions that return a response.
+// The response can be a string, a file, a json, etc.
+// The response is wrapped in a response type like Html, Json, etc.
+// The handler functions can take arguments like extractors, state, etc.
+// The handler functions can also have a return type like Result, Option, etc.
+// The handler functions can also have a state that is shared between all the requests.
+// The state is passed to the handler function as an argument.
+// The state is shared between all the requests and can be used to store shared data.
+// The state is passed to the handler function as an argument.
+
+async fn handler() -> Html<String> {
+    println!("Sending GET request to /inc");
+    let current_count = reqwest::get("http://localhost:3000/inc")
+        .await
+        .unwrap()
+        .json::<IncrementResponse>() // deserializing the response
+        .await
+        .unwrap();
+    Html(format!("<h3>/inc counter: {} {}</h3>", current_count.counter, current_count.env))
+}
+
+#[derive(Serialize, Deserialize)]
+struct IncrementResponse {
+    env: String,
+    counter: usize,
+}
+
+async fn increment(
+    Extension(counter): Extension<Arc<Counter>>,
+    Extension(config): Extension<Arc<Config>>
+    ) -> Json<IncrementResponse> {
+    let response = IncrementResponse {
+        env: config.env.clone(),
+        counter: counter.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+    };
+    Json(response)
+}
+//-------------------------------------------------------------------------
+// Extractors -------------------------------------------------------------
+// Extractors are used to extract data from the request like path, query, headers, etc.
+// Extractors are used as arguments to the handler functions.
+// Extractors are async functions that return the extracted data.
+
+fn extractors() -> Router {
+    Router::new()
+        .route("/book/:id", get(path_extract))      // extractor for path
+        .route("/book", get(query_extract))         // extractor for query
+        .route("/headers", get(header_extract))     // extractor for headers
 }
 
 async fn path_extract(Path(id): Path<u32>) -> Html<String> {
@@ -97,4 +110,42 @@ async fn header_extract(
     headers: HeaderMap
     ) -> Html<String> {
     Html(format!("{headers:#?}"))
+}
+
+//-------------------------------------------------------------------------
+// Nesting routers allows you to define the routes of the application in a modular way.
+// Each service can have its own router and the main router can nest these routers.
+// This makes the code more modular and easier to manage.
+// The subrouter can have its own state and configuration.
+
+struct SubRouterState(String); 
+
+fn nesting() -> Router {
+    Router::new()
+        .nest("/1", service_one())  // nesting subrouter 1
+        .nest("/2", service_two())  // nesting subrouter 2
+}
+
+fn service_one() -> Router {
+    let state = Arc::new(SubRouterState("Subrouter state".to_string())); // state for the subrouter
+    Router::new().route("/", get(sv1_handler)
+        .with_state(state)
+        )
+}
+
+async fn sv1_handler(
+    Extension(counter): Extension<Arc<Counter>>,
+    State(state): State<Arc<SubRouterState>>,
+    ) -> Html<String> {
+    counter.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    Html(format!("<h1>Service One <br>
+            Visitor number: {}<br>
+            {}</h1>", 
+            counter.counter.load(std::sync::atomic::Ordering::Relaxed),
+            state.0)
+        )
+}
+
+fn service_two() -> Router {
+    Router::new().route("/", get(||async {Html("Service Two".to_string())}))
 }
