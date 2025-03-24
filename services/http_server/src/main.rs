@@ -3,7 +3,7 @@
 // routing is a module that contains the routing primitives like get, post, put, etc.
 // Router is a struct that is used to define the routes of the application.
 use axum::{
-    extract::{Path, Query, State}, http::HeaderMap, response::Html, routing::get, Router
+    extract::{Path, Query}, http::HeaderMap, response::Html, routing::get, Extension, Router
 };
 use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
@@ -12,11 +12,19 @@ struct MyCounter {
                           //between multiple threads
 }
 
+struct MyConfig {
+    text: String,
+}
+
 #[tokio::main]
 async fn main() {
 
-    let shared_counter = Arc::new(MyConfig {
+    let shared_counter = Arc::new(MyCounter {
         counter: AtomicUsize::new(0),
+    });
+
+    let shared_text = Arc::new(MyConfig {
+        text: "This is configuration".to_string(),
     });
 
     let app = Router::new()
@@ -24,7 +32,8 @@ async fn main() {
         .route("/book/:id", get(path_extract))
         .route("/book", get(query_extract))
         .route("/headers", get(header_extract))
-        .with_state(shared_counter);
+        .layer(Extension(shared_text))
+        .layer(Extension(shared_counter));
 
     // It's called bind because it uses the bind() system call to bind to a socket.
     let listener = tokio::net::TcpListener::bind("localhost:3000")
@@ -36,10 +45,14 @@ async fn main() {
 }
 
 async fn handler(
-    State(config): State<Arc<MyCounter>>
+    Extension(counter): Extension<Arc<MyCounter>>,
+    Extension(config): Extension<Arc<MyConfig>>,
     ) -> Html<String> {
-    config.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    Html(format!("<h1>Visitor number: {}</h1>", config.counter.load(std::sync::atomic::Ordering::Relaxed)))
+    counter.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    Html(format!("<h1>{} - Visitor number: {}</h1>", 
+            config.text,
+            counter.counter.load(std::sync::atomic::Ordering::Relaxed))
+        )
 }
 
 async fn path_extract(Path(id): Path<u32>) -> Html<String> {
