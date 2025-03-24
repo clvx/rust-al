@@ -2,12 +2,13 @@
 // like Html, Json, etc.
 // routing is a module that contains the routing primitives like get, post, put, etc.
 // Router is a struct that is used to define the routes of the application.
-use axum::{response::Html, routing::get, Router};
+use axum::{response::Html, routing::get, Router, extract::Path};
 
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/", get(handler));
+        .route("/", get(handler))
+        .route("/book/:id", get(path_extract));
 
     // It's called bind because it uses the bind() system call to bind to a socket.
     let listener = tokio::net::TcpListener::bind("localhost:3000")
@@ -20,4 +21,10 @@ async fn main() {
 
 async fn handler() -> Html<&'static str> {
     Html("<h1>Hello, World!</h1>")
+}
+
+async fn path_extract(
+    Path(id): Path<u32>
+) -> Html<String> {
+    Html(format!("The book id is {}", id))
 }
