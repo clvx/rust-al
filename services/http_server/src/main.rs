@@ -5,17 +5,18 @@
 use axum::{
     extract::{Path, Query, State}, http::HeaderMap, response::Html, routing::get, Router
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
-struct MyConfig {
-    config_string: String,
+struct MyCounter {
+    counter: AtomicUsize, //interior mutability pattern to share the counter 
+                          //between multiple threads
 }
 
 #[tokio::main]
 async fn main() {
 
-    let shared_config = Arc::new(MyConfig {
-        config_string: "My config string".to_string(),
+    let shared_counter = Arc::new(MyConfig {
+        counter: AtomicUsize::new(0),
     });
 
     let app = Router::new()
@@ -23,7 +24,7 @@ async fn main() {
         .route("/book/:id", get(path_extract))
         .route("/book", get(query_extract))
         .route("/headers", get(header_extract))
-        .with_state(shared_config);
+        .with_state(shared_counter);
 
     // It's called bind because it uses the bind() system call to bind to a socket.
     let listener = tokio::net::TcpListener::bind("localhost:3000")
@@ -35,9 +36,10 @@ async fn main() {
 }
 
 async fn handler(
-    State(config): State<Arc<MyConfig>>
+    State(config): State<Arc<MyCounter>>
     ) -> Html<String> {
-    Html(format!("<h1>{}</h1>", config.config_string))
+    config.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    Html(format!("<h1>Visitor number: {}</h1>", config.counter.load(std::sync::atomic::Ordering::Relaxed)))
 }
 
 async fn path_extract(Path(id): Path<u32>) -> Html<String> {
