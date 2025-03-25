@@ -7,6 +7,7 @@ use axum::{
 };
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
+use tower_http::services::ServeDir;
 use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
 struct Counter {
@@ -35,7 +36,8 @@ async fn main() {
         .nest("/nest", nesting())                   // nesting services under /svc/1 /svc/2
         .route("/time", get(error_handling))
         .layer(Extension(shared_config))            // shared configuration
-        .layer(Extension(shared_counter));          // shared counter
+        .layer(Extension(shared_counter))          // shared counter
+        .fallback_service(ServeDir::new("web"));      // serve static files from the web directory
 
     // It's called bind because it uses the bind() system call to bind to a socket.
     let listener = tokio::net::TcpListener::bind("localhost:3000")
