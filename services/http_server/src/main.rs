@@ -18,6 +18,8 @@ struct Config {
     env: String,
 }
 
+
+
 #[tokio::main]
 async fn main() {
 
@@ -62,6 +64,7 @@ async fn main() {
 
 async fn handler() -> Html<String> {
     println!("Sending GET request to /inc");
+
     let response = reqwest::Client::new()
         .get("http://localhost:3000/inc")   // making a GET request to /inc
         .header("x-request-id", "123")      // adding auth header
@@ -71,27 +74,31 @@ async fn handler() -> Html<String> {
         .json::<IncrementResponse>()        // deserializing the response
         .await                              // waiting for the deserialization   
         .unwrap();                          // unwrapping the deserialization
-    Html(format!("<h3>/inc counter: {} {}</h3>", response.counter, response.env))
+    Html(format!("<h3>/inc counter: {} {}, x-request-id: {}</h3>", response.counter, response.env, response.auth))
 }
 
 #[derive(Serialize, Deserialize)]
 struct IncrementResponse {
     env: String,
     counter: usize,
+    auth: String,
 }
 
 fn increment() -> Router {
-    Router::new().route("/inc", get(inc))
+    Router::new()
+        .route("/inc", get(inc))
         .route_layer(middleware::from_fn(auth))    // middleware for authentication
 }
 
 async fn inc(
     Extension(counter): Extension<Arc<Counter>>,
-    Extension(config): Extension<Arc<Config>>
+    Extension(config): Extension<Arc<Config>>,
+    Extension(auth): Extension<AuthHeader>
     ) -> Json<IncrementResponse> {
     let response = IncrementResponse {
         env: config.env.clone(),
         counter: counter.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+        auth: auth.id.clone(),
     };
     Json(response)
 }
@@ -190,15 +197,21 @@ async fn error_handling() -> Result<impl IntoResponse, (StatusCode, String)> {
 // Middleware can be used to add shared configuration to the request.
 // Middleware can be used to add shared data to the request.
 
+#[derive(Clone)]
+struct AuthHeader { id: String } // AuthHeader needs to be cloneable because it 
+                                 // is stored in the request extensions
+
 async fn auth(
     headers: HeaderMap,
-    req: Request,
-    next: Next, // Next is a type alias for a function that takes a request and returns a response.
+    mut req: Request,       // req needs to be mutable because we are adding the AuthHeader to it
+    next: Next,             // Next is a type alias for a function that takes a request and returns a response.
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     // TODO: Fix this to not succeed when there isn't a header
     if let Some(header) =  headers.get("x-request-id") {
         // Validate the header
-        if header.to_str().unwrap() == "123" {
+        let header = header.to_str().unwrap();
+        if header == "123" {
+            req.extensions_mut().insert(AuthHeader { id: header.to_string() });
             return Ok(next.run(req).await);
         }
     }
