@@ -3,8 +3,9 @@
 // routing is a module that contains the routing primitives like get, post, put, etc.
 // Router is a struct that is used to define the routes of the application.
 use axum::{
-    extract::{Path, Query, State}, http::HeaderMap, response::Html, routing::get, Extension, Json, Router
+    extract::{Path, Query, State}, http::HeaderMap, response::{Html, IntoResponse}, routing::get, Extension, Json, Router
 };
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
@@ -32,6 +33,7 @@ async fn main() {
         .route("/inc", get(increment))
         .nest("/extract", extractors())             // nesting extractors
         .nest("/nest", nesting())                   // nesting services under /svc/1 /svc/2
+        .route("/time", get(error_handling))
         .layer(Extension(shared_config))            // shared configuration
         .layer(Extension(shared_counter));          // shared counter
 
@@ -148,4 +150,23 @@ async fn sv1_handler(
 
 fn service_two() -> Router {
     Router::new().route("/", get(||async {Html("Service Two".to_string())}))
+}
+
+//-------------------------------------------------------------------------
+// Error handling ---------------------------------------------------------
+
+// Error handling is done by returning a Result from the handler function.
+// IntoResponse is a trait that is implemented for various types to make them usable as responses
+// like Html, Json, etc.
+// The error is returned as a tuple of (StatusCode, String).
+async fn error_handling() -> Result<impl IntoResponse, (StatusCode, String)> {
+    let start = std::time::SystemTime::now();
+    let seconds_wrapped = start
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Bad clock".to_string()))?
+        .as_secs() % 3;
+    let divided = 100u64.checked_div(seconds_wrapped)
+        .ok_or((StatusCode::BAD_REQUEST, "div by 0".to_string()))?;
+
+    Ok(Json(divided))
 }
