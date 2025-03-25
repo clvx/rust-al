@@ -5,9 +5,10 @@
 use axum::{
     extract::{Path, Query, Request, State}, http::HeaderMap, middleware::{self, Next}, response::{Html, IntoResponse}, routing::get, Extension, Json, Router
 };
-use reqwest::StatusCode;
+use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
-use tower_http::services::ServeDir;
+use tower::{ServiceBuilder, limit::ConcurrencyLimitLayer};
+use tower_http::{compression::CompressionLayer, cors::CorsLayer, services::ServeDir, cors::Any};
 use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
 struct Counter {
@@ -31,14 +32,24 @@ async fn main() {
         env: "This is configuration".to_string(),
     });
 
+    let service = ServiceBuilder::new()
+        .layer(Extension(shared_config))
+        .layer(Extension(shared_counter))
+        .layer(CompressionLayer::new())
+        .layer(
+            CorsLayer::new()
+                .allow_methods([Method::GET, Method::POST])
+                .allow_origin(Any)
+        )
+        .layer(ConcurrencyLimitLayer::new(100));
+
     let app = Router::new()
         .route("/", get(handler))
         .merge(increment())
         .merge(extractors())                        // merging extractors
         .nest("/nest", nesting())                   // nesting services under /svc/1 /svc/2
         .route("/time", get(error_handling))
-        .layer(Extension(shared_config))            // shared configuration
-        .layer(Extension(shared_counter))           // shared counter
+        .layer(service.into_inner())
         .fallback_service(ServeDir::new("web"));     // serve static files from the web directory
 
     // It's called bind because it uses the bind() system call to bind to a socket.
