@@ -3,7 +3,7 @@
 // routing is a module that contains the routing primitives like get, post, put, etc.
 // Router is a struct that is used to define the routes of the application.
 use axum::{
-    extract::{Path, Query, State}, http::HeaderMap, response::{Html, IntoResponse}, routing::get, Extension, Json, Router
+    extract::{Path, Query, Request, State}, http::HeaderMap, middleware::{self, Next}, response::{Html, IntoResponse}, routing::get, Extension, Json, Router
 };
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -31,13 +31,13 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(handler))
-        .route("/inc", get(increment))
-        .nest("/extract", extractors())             // nesting extractors
+        .merge(increment())
+        .merge(extractors())                        // merging extractors
         .nest("/nest", nesting())                   // nesting services under /svc/1 /svc/2
         .route("/time", get(error_handling))
         .layer(Extension(shared_config))            // shared configuration
-        .layer(Extension(shared_counter))          // shared counter
-        .fallback_service(ServeDir::new("web"));      // serve static files from the web directory
+        .layer(Extension(shared_counter))           // shared counter
+        .fallback_service(ServeDir::new("web"));     // serve static files from the web directory
 
     // It's called bind because it uses the bind() system call to bind to a socket.
     let listener = tokio::net::TcpListener::bind("localhost:3000")
@@ -62,13 +62,16 @@ async fn main() {
 
 async fn handler() -> Html<String> {
     println!("Sending GET request to /inc");
-    let current_count = reqwest::get("http://localhost:3000/inc")
-        .await
-        .unwrap()
-        .json::<IncrementResponse>() // deserializing the response
-        .await
-        .unwrap();
-    Html(format!("<h3>/inc counter: {} {}</h3>", current_count.counter, current_count.env))
+    let response = reqwest::Client::new()
+        .get("http://localhost:3000/inc")   // making a GET request to /inc
+        .header("x-request-id", "123")      // adding auth header
+        .send()                             // calling send to send the request
+        .await                              // waiting for the response
+        .unwrap()                           // unwrapping the response
+        .json::<IncrementResponse>()        // deserializing the response
+        .await                              // waiting for the deserialization   
+        .unwrap();                          // unwrapping the deserialization
+    Html(format!("<h3>/inc counter: {} {}</h3>", response.counter, response.env))
 }
 
 #[derive(Serialize, Deserialize)]
@@ -77,7 +80,12 @@ struct IncrementResponse {
     counter: usize,
 }
 
-async fn increment(
+fn increment() -> Router {
+    Router::new().route("/inc", get(inc))
+        .route_layer(middleware::from_fn(auth))    // middleware for authentication
+}
+
+async fn inc(
     Extension(counter): Extension<Arc<Counter>>,
     Extension(config): Extension<Arc<Config>>
     ) -> Json<IncrementResponse> {
@@ -171,4 +179,28 @@ async fn error_handling() -> Result<impl IntoResponse, (StatusCode, String)> {
         .ok_or((StatusCode::BAD_REQUEST, "div by 0".to_string()))?;
 
     Ok(Json(divided))
+}
+
+//-------------------------------------------------------------------------
+// Auth middleware --------------------------------------------------------
+// Middleware is a function that takes a request and returns a response.
+// Middleware can be used to modify the request or response.
+// Middleware can be used to add authentication, logging, etc.
+// Middleware can be used to add shared state to the request.
+// Middleware can be used to add shared configuration to the request.
+// Middleware can be used to add shared data to the request.
+
+async fn auth(
+    headers: HeaderMap,
+    req: Request,
+    next: Next, // Next is a type alias for a function that takes a request and returns a response.
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    // TODO: Fix this to not succeed when there isn't a header
+    if let Some(header) =  headers.get("x-request-id") {
+        // Validate the header
+        if header.to_str().unwrap() == "123" {
+            return Ok(next.run(req).await);
+        }
+    }
+    Err((StatusCode::UNAUTHORIZED, "Unauthorized".to_string()))
 }
