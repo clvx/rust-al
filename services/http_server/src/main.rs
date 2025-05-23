@@ -32,8 +32,20 @@ async fn main() {
         env: "This is configuration".to_string(),
     });
 
+    // service creates a middleware stack using `ServiceBuilder` from the 
+    // `tower` library. Middleware layers are applied to incoming requests 
+    // before they reach the application logic and can modify requests, 
+    // responses, or enforce policies.
+    //
+    // ServiceBuilder is a builder pattern object that allows you to chain 
+    // .layer() calls to add middleware layers.
+    // Once all the desired layers are added, calling `.into_inner()` finalizes 
+    // the builder and produces the actual `Service` object.
     let service = ServiceBuilder::new()
-        .layer(Extension(shared_config))
+        .layer(Extension(shared_config))  // Adds the shared_config as an 
+                                          // extension making it available to 
+                                          // all request handlers via the 
+                                          // Extension extractor.
         .layer(Extension(shared_counter))
         .layer(CompressionLayer::new())
         .layer(
@@ -49,7 +61,9 @@ async fn main() {
         .merge(extractors())                        // merging extractors
         .nest("/nest", nesting())                   // nesting services under /svc/1 /svc/2
         .route("/time", get(error_handling))
-        .layer(service.into_inner())
+        .layer(service.into_inner())  // used to consume the ServiceBuilder 
+                                      // and retrieve the constructed 
+                                      // middleware stack as a Service instance 
         .fallback_service(ServeDir::new("web"));     // serve static files from the web directory
 
     // It's called bind because it uses the bind() system call to bind to a socket.
