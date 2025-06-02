@@ -5,10 +5,10 @@
 use axum::{
     extract::{Path, Query, Request, State}, http::HeaderMap, middleware::{self, Next}, response::{Html, IntoResponse}, routing::get, Extension, Json, Router
 };
-use reqwest::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tower::{ServiceBuilder, limit::ConcurrencyLimitLayer};
-use tower_http::{compression::CompressionLayer, cors::CorsLayer, services::ServeDir, cors::Any};
+use tower_http::{compression::CompressionLayer, cors::CorsLayer, services::ServeDir, trace::TraceLayer};
 use tracing::{debug, error, info};
 use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
@@ -54,12 +54,13 @@ async fn main() {
                                           // Extension extractor.
         .layer(Extension(shared_counter))
         .layer(CompressionLayer::new())
-        .layer(
-            CorsLayer::new()
-                .allow_methods([Method::GET, Method::POST])
-                .allow_origin(Any)
-        )
+        .layer(TraceLayer::new_for_http()) // TraceLayer is used for logging requests and
+                                           // responses, including their
+                                           // timing and status codes.
+                                           // Needs RUST_LOG=debug 
+        .layer(CorsLayer::permissive())
         .layer(ConcurrencyLimitLayer::new(100));
+                                            // responses
 
     let app = Router::new()
         .route("/", get(handler))
