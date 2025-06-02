@@ -9,6 +9,7 @@ use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
 use tower::{ServiceBuilder, limit::ConcurrencyLimitLayer};
 use tower_http::{compression::CompressionLayer, cors::CorsLayer, services::ServeDir, cors::Any};
+use tracing::{debug, error, info};
 use std::{collections::HashMap, sync::{atomic::AtomicUsize, Arc}};
 
 struct Counter {
@@ -23,6 +24,11 @@ struct Config {
 
 #[tokio::main]
 async fn main() {
+
+    // Setup default tracing
+    tracing_subscriber::fmt::init();
+
+    info!("Starting the server...");
 
     let shared_counter = Arc::new(Counter {
         counter: AtomicUsize::new(0),
@@ -71,7 +77,7 @@ async fn main() {
         .await
         .unwrap(); // tokio is async
 
-    print!("Server running on port 3000");
+    info!("Server running on port 3000");
     axum::serve(listener, app).await.unwrap(); //axum is async
 }
 
@@ -134,6 +140,9 @@ async fn inc(
 // Extractors are async functions that return the extracted data.
 
 fn extractors() -> Router {
+    // debug! only works if the log level is set to debug or lower
+    // You can set the log level by setting the RUST_LOG environment variable
+    debug!("Setting up extractors...");
     Router::new()
         .route("/book/:id", get(path_extract))      // extractor for path
         .route("/book", get(query_extract))         // extractor for query
@@ -240,5 +249,6 @@ async fn auth(
             return Ok(next.run(req).await);
         }
     }
+    error!("Unauthorized request: missing or invalid x-request-id header");
     Err((StatusCode::UNAUTHORIZED, "Unauthorized".to_string()))
 }
